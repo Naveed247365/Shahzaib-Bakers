@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "*.html", "use": "@vercel/static" },
+    { "src": "/api/upload-image", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/upload-image", "dest": "/api/upload-image" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
