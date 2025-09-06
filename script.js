@@ -39,7 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
             category: "bread",
             price: 200,
             stock: 42,
-            description: "Freshly baked whole wheat bread, perfect for health-conscious families.",
             image: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
             status: "active"
         },
@@ -49,7 +48,6 @@ document.addEventListener('DOMContentLoaded', function() {
             category: "cakes",
             price: 850,
             stock: 15,
-            description: "Rich, moist chocolate cake with layers of chocolate frosting.",
             image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
             status: "active"
         },
@@ -59,7 +57,6 @@ document.addEventListener('DOMContentLoaded', function() {
             category: "pastries",
             price: 120,
             stock: 36,
-            description: "Flaky, buttery croissants made with pure butter and traditional techniques.",
             image: "https://images.unsplash.com/photo-1555507036-ab794f24d6c7?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
             status: "active"
         },
@@ -69,7 +66,6 @@ document.addEventListener('DOMContentLoaded', function() {
             category: "pastries",
             price: 100,
             stock: 0,
-            description: "Soft, fluffy donuts with various toppings and fillings.",
             image: "https://images.unsplash.com/photo-1587248720328-4daa08f11b9e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
             status: "out-of-stock"
         }
@@ -586,21 +582,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const priceInput = document.getElementById('productPrice');
         const stockInput = document.getElementById('productStock');
         const fileInput = document.getElementById('productImage');
-        if (!nameInput || !categoryInput || !priceInput || !stockInput || !descriptionInput) return;
+
+        // Check if all required inputs exist
+        if (!nameInput || !categoryInput || !priceInput || !stockInput || !fileInput) {
+            alert('Form elements are missing. Please check the form structure.');
+            return;
+        }
 
         const name = nameInput.value.trim();
         const category = categoryInput.value;
         const price = parseFloat(priceInput.value);
         const stock = parseInt(stockInput.value);
-        const description = descriptionInput.value.trim();
 
-        if (!name || !category || isNaN(price) || isNaN(stock) || !description) {
-            alert('Please fill in all fields');
+        // Validate inputs
+        if (!name || !category || isNaN(price) || price <= 0 || isNaN(stock) || stock < 0) {
+            alert('Please fill in all fields with valid values.');
             return;
         }
 
         let image = 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80';
-        if (fileInput && fileInput.files[0]) {
+        if (fileInput.files[0]) {
             try {
                 image = await toBase64(fileInput.files[0]);
             } catch (error) {
@@ -615,7 +616,6 @@ document.addEventListener('DOMContentLoaded', function() {
             category,
             price,
             stock,
-            description,
             image,
             status: stock > 0 ? 'active' : 'out-of-stock'
         };
@@ -636,8 +636,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const categoryInput = document.getElementById('productCategory');
             const priceInput = document.getElementById('productPrice');
             const stockInput = document.getElementById('productStock');
+            const fileInput = document.getElementById('productImage');
             const imagePreview = document.getElementById('imagePreview');
-            if (!nameInput || !categoryInput || !priceInput || !stockInput || !descriptionInput || !imagePreview) return;
+
+            // Check if all required inputs exist
+            if (!nameInput || !categoryInput || !priceInput || !stockInput || !fileInput || !imagePreview) {
+                alert('Form elements are missing. Please check the form structure.');
+                return;
+            }
 
             nameInput.value = product.name;
             categoryInput.value = product.category;
@@ -653,17 +659,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     const category = categoryInput.value;
                     const price = parseFloat(priceInput.value);
                     const stock = parseInt(stockInput.value);
-                    const file = fileInput && fileInput.files[0];
 
-                    if (!name || !category || isNaN(price) || isNaN(stock)) {
-                        alert('Please fill in all fields');
+                    // Validate inputs
+                    if (!name || !category || isNaN(price) || price <= 0 || isNaN(stock) || stock < 0) {
+                        alert('Please fill in all fields with valid values.');
                         return;
                     }
 
                     let image = product.image;
-                    if (file) {
+                    if (fileInput.files[0]) {
                         try {
-                            image = await toBase64(file);
+                            image = await toBase64(fileInput.files[0]);
                         } catch (error) {
                             alert('Error uploading image');
                             return;
@@ -802,7 +808,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const username = document.getElementById('username');
             const password = document.getElementById('password');
             if (!username || !password) return;
-            if (username.value === 'admin' && password.value === 'SMJ786') {
+            if (username.value === 'admin' && password.value === 'admin123') {
                 if (loginContainer && adminView && webstoreView) {
                     loginContainer.style.display = 'none';
                     adminView.style.display = 'flex';
