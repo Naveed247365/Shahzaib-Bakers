@@ -1,108 +1,519 @@
-function doGet(e) {
-  const action = e.parameter.action || 'getProducts';
-  if (action === 'getOrders') {
-    return ContentService.createTextOutput(JSON.stringify(getOrders()))
-      .setMimeType(ContentService.MimeType.JSON);
-  } else if (action === 'getCustomers') {
-    return ContentService.createTextOutput(JSON.stringify(getCustomers()))
-      .setMimeType(ContentService.MimeType.JSON);
-  } else {
-    return ContentService.createTextOutput(JSON.stringify(getProducts()))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shahzaib Bakers - Fresh Bakery Delivered Quickly</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Webstore View -->
+    <div class="webstore-container" id="webstore-view">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-bread-slice fa-2x"></i>
+                    <h1>Shahzaib<br>Bakers</h1>
+                </div>
+                <nav>
+                    <div class="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </div>
+                    <ul>
+                        <li><a href="#home" class="nav-link">Home</a></li>
+                        <li><a href="#products" class="nav-link">Products</a></li>
+                        <li><a href="#about" class="nav-link">About Us</a></li>
+                        <li><a href="#contact" class="nav-link">Contact</a></li>
+                        <li><a href="#cart" id="view-cart" class="nav-link">Cart (<span id="cart-count">0</span>)</a></li>
+                        <li class="mobile-admin-btn"><a href="#" class="nav-link" id="show-login-mobile">Admin Login</a></li>
+                    </ul>
+                </nav>
+                <a href="#" class="admin-login-btn" id="show-login">Admin Login</a>
+            </div>
+        </header>
 
-function doPost(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Products');
-  const data = JSON.parse(e.postData.contents);
-  
-  if (data.action === 'addProduct' || data.action === 'updateProduct') {
-    const productData = [
-      data.id,
-      data.name,
-      data.category,
-      data.price,
-      data.stock,
-      data.description,
-      data.image, // Now stores local path like /public/images/product-1.jpg
-      data.status
-    ];
-    
-    if (data.action === 'addProduct') {
-      sheet.appendRow(productData);
-    } else {
-      const sheetData = sheet.getDataRange().getValues();
-      for (let i = 1; i < sheetData.length; i++) {
-        if (sheetData[i][0] === data.id) {
-          sheet.getRange(i + 1, 1, 1, 8).setValues([productData]);
-          break;
-        }
-      }
-    }
-    
-    return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: data.action === 'addProduct' ? 'Product added' : 'Product updated' }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Invalid action' }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+        <!-- Hero Section -->
+        <section class="hero" id="home">
+            <div class="hero-content">
+                <div class="delivery-badge">
+                    <i class="fas fa-bolt"></i> Delivery within 60 minutes!
+                </div>
+                <h2>Fresh Bakery Delivered to Your Door</h2>
+                <p>Experience the finest breads, cakes, and pastries from Shahzaib Bakers, delivered quickly to enjoy at its freshest.</p>
+                <a href="https://wa.me/+923452307908?text=Hello%20Shahzaib%20Bakers!%20I%20would%20like%20to%20place%20an%20order." class="whatsapp-btn" target="_blank">
+                    <i class="fab fa-whatsapp"></i> Order on WhatsApp
+                </a>
+            </div>
+        </section>
 
-function getProducts() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Products');
-  const data = sheet.getDataRange().getValues();
-  const products = [];
-  
-  for (let i = 1; i < data.length; i++) {
-    products.push({
-      id: data[i][0],
-      name: data[i][1],
-      category: data[i][2],
-      price: data[i][3],
-      stock: data[i][4],
-      description: data[i][5],
-      image: data[i][6],
-      status: data[i][7]
-    });
-  }
-  
-  return products;
-}
+        <!-- Products Section -->
+        <section id="products">
+            <h2 class="section-title">Our Popular Products</h2>
+            <select id="category-filter" class="form-control max-w-xs mx-auto mb-6">
+                <option value="all">All Categories</option>
+                <!-- Categories will be loaded dynamically -->
+            </select>
+            <div class="products" id="products-container">
+                <!-- Products will be loaded dynamically -->
+            </div>
+        </section>
 
-function getOrders() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Orders');
-  const data = sheet.getDataRange().getValues();
-  const orders = [];
-  
-  for (let i = 1; i < data.length; i++) {
-    orders.push({
-      id: data[i][0],
-      customer: data[i][1],
-      products: JSON.parse(data[i][2] || '[]'),
-      total: data[i][3],
-      date: data[i][4],
-      status: data[i][5]
-    });
-  }
-  
-  return orders;
-}
+        <!-- Cart Section -->
+        <section id="cart" style="display: none;">
+            <h2 class="section-title">Your Cart</h2>
+            <div class="cart-items" id="cart-items"></div>
+            <div class="text-right mt-20">
+                <p id="cart-total" class="text-lg font-semibold"></p>
+                <button id="checkout" class="btn btn-success">Checkout</button>
+            </div>
+        </section>
 
-function getCustomers() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Customers');
-  const data = sheet.getDataRange().getValues();
-  const customers = [];
-  
-  for (let i = 1; i < data.length; i++) {
-    customers.push({
-      id: data[i][0],
-      name: data[i][1],
-      email: data[i][2],
-      phone: data[i][3],
-      orders: data[i][4],
-      totalSpent: data[i][5]
-    });
-  }
-  
-  return customers;
-}
+        <!-- Features Section -->
+        <section id="about">
+            <h2 class="section-title">Why Choose Shahzaib Bakers</h2>
+            <div class="features">
+                <div class="feature">
+                    <i class="fas fa-bolt"></i>
+                    <h3>Quick Delivery</h3>
+                    <p>Fresh bakery items delivered to your doorstep within 60 minutes</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-seedling"></i>
+                    <h3>Fresh Ingredients</h3>
+                    <p>We use only the finest and freshest ingredients in all our products</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-utensils"></i>
+                    <h3>Traditional Recipes</h3>
+                    <p>Time-tested recipes that have been perfected over generations</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-headset"></i>
+                    <h3>Easy Ordering</h3>
+                    <p>Order via WhatsApp with just a few clicks - no apps needed</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonials Section -->
+        <section class="testimonials">
+            <h2 class="section-title">What Our Customers Say</h2>
+            <div class="testimonial-grid">
+                <div class="testimonial">
+                    <p class="testimonial-text">"The bread from Shahzaib Bakers is always fresh and delicious. Their quick delivery means I can enjoy warm bread anytime!"</p>
+                    <p class="testimonial-author">- Ayesha R.</p>
+                </div>
+                <div class="testimonial">
+                    <p class="testimonial-text">"I love ordering their cakes for family occasions. The WhatsApp ordering makes it so convenient!"</p>
+                    <p class="testimonial-author">- Omar K.</p>
+                </div>
+                <div class="testimonial">
+                    <p class="testimonial-text">"The best bakery in town! Their croissants are as good as ones I've had in Paris, and delivered in under an hour."</p>
+                    <p class="testimonial-author">- Fatima S.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer id="contact">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Shahzaib Bakers</h3>
+                    <p>Fresh bakery delivered quickly to your home or office. Order via WhatsApp for the fastest service.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Contact Us</h3>
+                    <p><i class="fas fa-map-marker-alt"></i> 123 Bakery Street, City</p>
+                    <p><i class="fas fa-phone"></i> +92 300 1234567</p>
+                    <p><i class="fas fa-envelope"></i> info@shahzaibbakers.com</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <p><a href="#home" class="nav-link">Home</a></p>
+                    <p><a href="#products" class="nav-link">Products</a></p>
+                    <p><a href="#about" class="nav-link">About Us</a></p>
+                    <p><a href="#contact" class="nav-link">Contact</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Follow Us</h3>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                    <p class="whatsapp-info">Order via WhatsApp: <a href="https://wa.me/+923452307908">+92 345 2307908</a></p>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2025 Shahzaib Bakers. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- WhatsApp Floating Button -->
+        <a href="https://wa.me/+923452307908?text=Hello%20Shahzaib%20Bakers!%20I%20would%20like%20to%20place%20an%20order." class="whatsapp-float" target="_blank">
+            <i class="fab fa-whatsapp"></i>
+        </a>
+
+        <!-- Mobile Cart Button (Fixed at Bottom) -->
+        <div class="mobile-cart-button" id="mobile-cart-button">
+            <a href="#cart" class="nav-link">
+                <i class="fas fa-shopping-cart"></i>
+                <span id="mobile-cart-count">0</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard View -->
+    <div class="admin-container" id="admin-view">
+        <!-- Admin Header -->
+        <header class="admin-header">
+            <div class="admin-header-content">
+                <div class="logo">
+                    <i class="fas fa-bread-slice fa-2x"></i>
+                    <h1>Shahzaib Bakers Admin</h1>
+                </div>
+                <div class="admin-nav">
+                    <a href="#" id="admin-dashboard-link">Dashboard</a>
+                    <a href="#" id="back-to-store">Back to Store</a>
+                    <a href="#" id="admin-logout">Logout</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Admin Main Content -->
+        <div class="admin-main">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <i class="fas fa-user-cog fa-2x"></i>
+                    <h2>Admin Panel</h2>
+                    <p>Shahzaib Bakers</p>
+                </div>
+                <div class="sidebar-menu">
+                    <ul>
+                        <li class="menu-active"><a href="#" data-section="dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+                        <li><a href="#" data-section="products"><i class="fas fa-box"></i> Products</a></li>
+                        <li><a href="#" data-section="orders"><i class="fas fa-shopping-cart"></i> Orders</a></li>
+                        <li><a href="#" data-section="customers"><i class="fas fa-users"></i> Customers</a></li>
+                        <li><a href="#" data-section="categories"><i class="fas fa-tags"></i> Categories</a></li>
+                        <li><a href="#" data-section="settings"><i class="fas fa-cog"></i> Settings</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Admin Content -->
+            <div class="admin-content">
+                <!-- Dashboard Section -->
+                <div class="admin-section active" id="dashboard-section">
+                    <h2 class="section-title">Dashboard Overview</h2>
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-icon icon-orders">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="total-orders">0</h3>
+                                <p>Total Orders</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon icon-products">
+                                <i class="fas fa-box"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="total-products">0</h3>
+                                <p>Products</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon icon-revenue">
+                                <i class="fas fa-rupee-sign"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="total-revenue">Rs. 0</h3>
+                                <p>Total Revenue</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon icon-customers">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="total-customers">0</h3>
+                                <p>Customers</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h2>Recent Orders</h2>
+                            <a href="#" class="btn btn-primary" data-section="orders">View All</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table id="recent-orders-table">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Orders will be loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Products Section -->
+                <div class="admin-section" id="products-section">
+                    <h2 class="section-title">Product Management</h2>
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h2>Products</h2>
+                            <button class="btn btn-primary" onclick="openModal()">Add Product</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table id="products-table">
+                                <thead>
+                                    <tr>
+                                        <th>Image</th>
+                                        <th>Product</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Stock</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Products will be loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Orders Section -->
+                <div class="admin-section" id="orders-section">
+                    <h2 class="section-title">Order Management</h2>
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h2>All Orders</h2>
+                        </div>
+                        <div class="table-responsive">
+                            <table id="orders-table">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Products</th>
+                                        <th>Total</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Orders will be loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Customers Section -->
+                <div class="admin-section" id="customers-section">
+                    <h2 class="section-title">Customer Management</h2>
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h2>Customers</h2>
+                        </div>
+                        <div class="table-responsive">
+                            <table id="customers-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Orders</th>
+                                        <th>Total Spent</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Customers will be loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Categories Section -->
+                <div class="admin-section" id="categories-section">
+                    <h2 class="section-title">Category Management</h2>
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h2>Categories</h2>
+                            <button class="btn btn-primary" onclick="openCategoryModal()">Add Category</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table id="categories-table">
+                                <thead>
+                                    <tr>
+                                        <th>Category Name</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Categories will be loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Settings Section -->
+                <div class="admin-section" id="settings-section">
+                    <h2 class="section-title">Settings</h2>
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h2>Store Settings</h2>
+                        </div>
+                        <form id="settings-form">
+                            <div class="form-group">
+                                <label for="store-name">Store Name</label>
+                                <input type="text" class="form-control" id="store-name" value="Shahzaib Bakers">
+                            </div>
+                            <div class="form-group">
+                                <label for="store-email">Store Email</label>
+                                <input type="email" class="form-control" id="store-email" value="info@shahzaibbakers.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="store-phone">Store Phone</label>
+                                <input type="tel" class="form-control" id="store-phone" value="+92 300 1234567">
+                            </div>
+                            <div class="form-group">
+                                <label for="store-address">Store Address</label>
+                                <textarea class="form-control" id="store-address" rows="3">123 Bakery Street, City</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="delivery-time">Delivery Time (minutes)</label>
+                                <input type="number" class="form-control" id="delivery-time" value="60">
+                            </div>
+                            <div class="text-right mt-20">
+                                <button type="submit" class="btn btn-success">Save Settings</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Form -->
+    <div class="login-container" id="login-container">
+        <div class="login-form">
+            <div class="login-header">
+                <h2>Admin Login</h2>
+                <p>Enter your credentials to access the admin dashboard</p>
+            </div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" class="form-control" id="username" placeholder="Enter your username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" class="form-control" id="password" placeholder="Enter your password" required>
+                </div>
+                <div class="form-group text-right mt-20">
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </div>
+                <div class="switch-view">
+                    <a href="#" id="back-to-store-from-login">Back to Store</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Product</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="add-product-form">
+                <div class="form-group">
+                    <label for="productName">Product Name</label>
+                    <input type="text" class="form-control" id="productName" placeholder="Enter product name" required>
+                </div>
+                <div class="form-group">
+                    <label for="productCategory">Category</label>
+                    <select class="form-control" id="productCategory" required>
+                        <option value="">Select Category</option>
+                        <!-- Categories will be loaded dynamically -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="productPrice">Price (Rs.)</label>
+                    <input type="number" class="form-control" id="productPrice" placeholder="Enter price" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="productStock">Stock Quantity</label>
+                    <input type="number" class="form-control" id="productStock" placeholder="Enter stock quantity" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="productDescription">Description</label>
+                    <textarea class="form-control" id="productDescription" rows="3" placeholder="Enter product description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="productImage">Product Image</label>
+                    <div class="image-upload-container">
+                        <div class="image-preview" id="imagePreview">
+                            <div class="image-preview-text">Image preview will appear here</div>
+                        </div>
+                        <label for="productImage" class="upload-btn">
+                            <i class="fas fa-upload"></i> Choose Image
+                        </label>
+                        <input type="file" class="form-control" id="productImage" accept="image/*">
+                    </div>
+                </div>
+                <div class="text-right mt-20">
+                    <button type="button" class="btn btn-danger" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success">Save Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Category Modal -->
+    <div class="modal" id="categoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Category</h2>
+                <span class="close" onclick="closeCategoryModal()">&times;</span>
+            </div>
+            <form id="add-category-form">
+                <div class="form-group">
+                    <label for="categoryName">Category Name</label>
+                    <input type="text" class="form-control" id="categoryName" placeholder="Enter category name" required>
+                </div>
+                <div class="text-right mt-20">
+                    <button type="button" class="btn btn-danger" onclick="closeCategoryModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success">Save Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
